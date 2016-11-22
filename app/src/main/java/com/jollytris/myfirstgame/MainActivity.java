@@ -15,8 +15,6 @@ import android.widget.TextView;
 
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
-import com.jollytris.myfirstgame.view.DrawThread;
-import com.jollytris.myfirstgame.view.RacingView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -33,9 +31,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageView ivCenter;
     private RacingView racingView;
     private int score, level, bestScore;
-    private int speed;
     private long startLevelTime;
-    private boolean isCollision;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
             adBanner.destroy();
         }
 
-        racingView.stop();
+        racingView.reset();
         racingHandler.removeMessages(MSG_FINISH_LEVEL);
         super.onDestroy();
     }
@@ -126,11 +122,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case DrawThread.MSG_SCORE:
+                case RacingView.MSG_SCORE:
                     score = score + (level);
                     tvScore.setText(String.valueOf(score));
                     break;
-                case DrawThread.MSG_COLLISION:
+                case RacingView.MSG_COLLISION:
                     boolean achieveBest = false;
                     if (bestScore < score) {
                         tvBest.setText(String.valueOf(score));
@@ -138,18 +134,14 @@ public class MainActivity extends AppCompatActivity {
                         saveBestScore(bestScore);
                         achieveBest = true;
                     }
-                    racingView.stop();
-                    racingView.reset();
-
                     collision(achieveBest);
                     break;
                 case MSG_FINISH_LEVEL:
                     level++;
-                    racingView.pause();
+                    racingView.setPlayState(RacingView.PlayState.LevelUp);
 
-                    if (speed < MAX_SPEED) {
-                        speed += SPEED_INTERVAL;
-                        racingView.setSpeed(speed);
+                    if (racingView.getSpeed() < MAX_SPEED) {
+                        racingView.setSpeed(racingView.getSpeed() + SPEED_INTERVAL);
                     }
 
                     prepare();
@@ -185,8 +177,9 @@ public class MainActivity extends AppCompatActivity {
         score = 0;
         level = 1;
         bestScore = loadBestScore();
-        speed = INIT_SPEED;
-        isCollision = false;
+
+        racingView.setSpeed(INIT_SPEED);
+        racingView.setPlayState(RacingView.PlayState.Ready);
 
         tvScore.setText(String.valueOf(score));
         tvLevel.setText(String.valueOf(level));
@@ -202,14 +195,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void play() {
-        if (isCollision) {
+        if (racingView.getPlayState() == RacingView.PlayState.Collision) {
             initialize();
-            racingView.clear();
-            return ;
+
+            racingView.reset();
+            return;
         }
 
         // Click on playing
-        if (racingView.getPlayState() == DrawThread.PlayState.Playing) {
+        if (racingView.getPlayState() == RacingView.PlayState.Playing) {
             ivCenter.setBackgroundResource(R.drawable.ic_play);
             racingView.pause();
             startLevelTime = System.currentTimeMillis() - startLevelTime;
@@ -218,21 +212,17 @@ public class MainActivity extends AppCompatActivity {
             ivCenter.setBackgroundResource(R.drawable.ic_pause);
 
             // Click on pause
-            if (racingView.getPlayState() == DrawThread.PlayState.Pause) {
+            if (racingView.getPlayState() == RacingView.PlayState.Pause) {
                 racingView.resume();
-
-                // Click on pause by level up
-                if (contLabel.getVisibility() == View.VISIBLE) {
-                    hideLabelContainer();
-                    racingHandler.sendEmptyMessageDelayed(MSG_FINISH_LEVEL, DURATION_LEVEL);
-                } else {
-                    // Click on pause by button
-                    racingHandler.sendEmptyMessageDelayed(MSG_FINISH_LEVEL, DURATION_LEVEL - startLevelTime);
-                }
+                racingHandler.sendEmptyMessageDelayed(MSG_FINISH_LEVEL, DURATION_LEVEL - startLevelTime);
+            } else if (racingView.getPlayState() == RacingView.PlayState.LevelUp) {
+                racingView.resume();
+                hideLabelContainer();
+                racingHandler.sendEmptyMessageDelayed(MSG_FINISH_LEVEL, DURATION_LEVEL);
             } else {
                 // Click on stop
                 hideLabelContainer();
-                racingView.play(racingHandler, speed);
+                racingView.play(racingHandler);
                 racingHandler.sendEmptyMessageDelayed(MSG_FINISH_LEVEL, DURATION_LEVEL);
             }
             startLevelTime = System.currentTimeMillis();
@@ -240,7 +230,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void collision(boolean achieveBest) {
-        isCollision = true;
         racingHandler.removeMessages(MSG_FINISH_LEVEL);
 
         if (achieveBest) {

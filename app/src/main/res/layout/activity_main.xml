@@ -92,20 +92,27 @@
         android:layout_height="match_parent"
         android:layout_weight="1">
 
-        <FrameLayout
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_marginLeft="60dp"
+            android:layout_marginRight="60dp"
+            android:background="@color/brown900" />
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_alignParentBottom="true"
+            android:layout_marginLeft="60dp"
+            android:layout_marginRight="60dp"
+            android:background="@color/brown900" />
+
+        <com.jollytris.myfirstgame.RacingView
+            android:id="@+id/racingView"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_centerInParent="true"
-            android:layout_margin="4dp"
-            android:background="@drawable/rect_outline"
-            android:padding="4dp">
-
-            <com.jollytris.myfirstgame.view.RacingView
-                android:id="@+id/racingView"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_gravity="center" />
-        </FrameLayout>
+            android:layout_margin="4dp" />
 
         <LinearLayout
             android:id="@+id/contLabel"

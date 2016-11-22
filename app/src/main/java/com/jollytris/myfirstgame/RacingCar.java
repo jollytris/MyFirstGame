@@ -1,13 +1,10 @@
-package com.jollytris.myfirstgame.model;
+package com.jollytris.myfirstgame;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
-
-import com.jollytris.myfirstgame.common.Colors;
-import com.jollytris.myfirstgame.view.RacingView;
 
 public class RacingCar {
 
@@ -80,7 +77,7 @@ public class RacingCar {
     }
 
     public void draw(Canvas c, boolean isCollision) {
-        paint.setColor(Color.RED);
+        paint.setColor(isCollision ? Color.RED : COLOR_ME);
 
         drawBlock(c, 1, 0);
 

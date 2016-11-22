@@ -1,4 +1,4 @@
-package com.jollytris.myfirstgame.common;
+package com.jollytris.myfirstgame;
 
 /**
  * Created by zic325 on 2016. 11. 17..

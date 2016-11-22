@@ -1,33 +1,40 @@
-package com.jollytris.myfirstgame.view;
+package com.jollytris.myfirstgame;
 
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.os.Handler;
-import android.view.SurfaceHolder;
-
-import com.jollytris.myfirstgame.common.Colors;
-import com.jollytris.myfirstgame.model.RacingCar;
+import android.util.AttributeSet;
+import android.view.View;
+import android.view.ViewGroup;
 
 import java.util.ArrayList;
 import java.util.Random;
 
-public class DrawThread extends Thread {
+/**
+ * Created by zic325 on 2016. 11. 16..
+ */
+
+public class RacingView extends View {
 
     //---------------------------------------------------------------------------------------------
     // fields
     //---------------------------------------------------------------------------------------------
+    public static final int SPACING = 2;
+    public static final int VERTICAL_COUNT = 20;
+    public static final int HORIZONTAL_COUNT = 10;
+    public static final int MAX_COL_COUNT = 2;
+    public static final int MAX_OBSTACLE = 10;
+
     public static final int MSG_SCORE = 1000;
     public static final int MSG_COLLISION = 2000;
+
     public enum PlayState {
-        Playing, Pause, Stop
+        Ready, Playing, Pause, LevelUp, Collision
     }
 
-    private SurfaceHolder holder = null;
     private Handler handler = null;
-    private boolean isRunning;
-    private boolean isCollision;
     private PlayState state;
     private int viewWidth, viewHeight, blockSize;
     private int speed;
@@ -42,85 +49,99 @@ public class DrawThread extends Thread {
     //---------------------------------------------------------------------------------------------
     // constructor
     //---------------------------------------------------------------------------------------------
-    public DrawThread(Context context, SurfaceHolder holder) {
-        this.holder = holder;
-        isRunning = true;
-        state = PlayState.Stop;
-        isCollision = false;
-        speed = 0;
+    public RacingView(Context context) {
+        super(context);
+    }
+
+    public RacingView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+
+    public RacingView(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
     }
 
     //---------------------------------------------------------------------------------------------
     // override
     //---------------------------------------------------------------------------------------------
     @Override
-    public void run() {
-        super.run();
-
-        while (isRunning) {
-            Canvas canvas = null;
-
-            try {
-                canvas = holder.lockCanvas(null);
-
-                synchronized (holder) {
-                    paint.setColor(Colors.BROWN50);
-                    canvas.drawRect(0, 0, viewWidth, viewHeight, paint);
-
-                    drawWall(canvas);
-                    drawObastacles(canvas);
-
-                    if (myself != null) {
-                        myself.draw(canvas);
-                    }
-
-                    if (isCollision) {
-                        myself.draw(canvas, true);
-                    } else {
-                        if (handler != null && state == PlayState.Playing) {
-                            handler.sendEmptyMessage(MSG_SCORE);
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                if (canvas != null) {
-                    holder.unlockCanvasAndPost(canvas);
-                }
-            }
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        int height = bottom - top;
+        if (bottom - top > 0) {
+            int blockSize = (height - (SPACING * (VERTICAL_COUNT + 1))) / VERTICAL_COUNT;
+            int w = blockSize * HORIZONTAL_COUNT + SPACING * (HORIZONTAL_COUNT + 1);
+            int h = blockSize * VERTICAL_COUNT + SPACING * (VERTICAL_COUNT + 1);
+            initialize(w, h, blockSize);
         }
     }
 
-    //---------------------------------------------------------------------------------------------
-    // public method
-    //---------------------------------------------------------------------------------------------
-    public void initialize(int width, int height, int blockSize) {
-        this.viewWidth = width;
-        this.viewHeight = height;
-        this.blockSize = blockSize;
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
 
-        setProperties();
+        canvas.drawColor(Colors.BROWN50);
 
-        createWall();
-        createObstacles();
+        drawWall(canvas);
 
-        myself = new RacingCar(blockSize);
-        myself.x = getLeftPositionX(1);
-        myself.y = viewHeight - myself.height - RacingView.SPACING;
+        if (state != PlayState.Ready) {
+            drawObastacles(canvas);
+        }
+
+        if (myself != null) {
+            myself.draw(canvas, state == PlayState.Collision);
+        }
+
+        if (handler != null && state == PlayState.Playing) {
+            handler.sendEmptyMessage(MSG_SCORE);
+        }
+        invalidate();
     }
 
-    public void play(Handler handler, int speed) {
-        this.handler = handler;
+    //---------------------------------------------------------------------------------------------
+    // public
+    //---------------------------------------------------------------------------------------------
+    public void setPlayState(PlayState state) {
+        this.state = state;
+    }
+
+    public PlayState getPlayState() {
+        return state;
+    }
+
+    public void setSpeed(int speed) {
         this.speed = speed;
+    }
+
+    public int getSpeed() {
+        return speed;
+    }
+
+    public void play(Handler handler) {
+        this.handler = handler;
+        state = PlayState.Playing;
+    }
+
+    public void resume() {
+        state = PlayState.Playing;
+    }
+
+    public void pause() {
+        state = PlayState.Pause;
+    }
+
+    public void reset() {
+        state = PlayState.Ready;
+
+        createObstacles();
     }
 
     public void moveLeft() {
         if (state != PlayState.Playing) {
-            return ;
+            return;
         }
 
-        if (myself != null && !isCollision) {
+        if (myself != null) {
             if (myself.x > blockSize + RacingView.SPACING * 2) {
                 myself.moveLeft();
             }
@@ -132,10 +153,10 @@ public class DrawThread extends Thread {
 
     public void moveRight() {
         if (state != PlayState.Playing) {
-            return ;
+            return;
         }
 
-        if (myself != null && !isCollision) {
+        if (myself != null) {
             if (myself.x + myself.width < viewWidth - RacingView.SPACING * 2 - blockSize) {
                 myself.moveRight();
             }
@@ -147,29 +168,34 @@ public class DrawThread extends Thread {
         }
     }
 
-    public boolean isRunning() {
-        return isRunning;
+    //---------------------------------------------------------------------------------------------
+    // private
+    //---------------------------------------------------------------------------------------------
+    private void initialize(int width, int height, int blockSize) {
+        if (myself != null) {
+            return;
+        }
+        state = PlayState.Ready;
+
+        this.viewWidth = width;
+        this.viewHeight = height;
+        this.blockSize = blockSize;
+
+        ViewGroup.LayoutParams params = getLayoutParams();
+        params.width = width;
+        params.height = height;
+        setLayoutParams(params);
+
+        setProperties();
+
+        createWall();
+        createObstacles();
+
+        myself = new RacingCar(blockSize);
+        myself.x = getLeftPositionX(random.nextInt(2));
+        myself.y = viewHeight - myself.height - RacingView.SPACING;
     }
 
-    public void setRunning(boolean isRunning) {
-        this.isRunning = isRunning;
-    }
-
-    public void setSpeed(int speed) {
-        this.speed = speed;
-    }
-
-    public void setPlayState(PlayState state) {
-        this.state = state;
-    }
-
-    public PlayState getPlayState() {
-        return state;
-    }
-
-    //-------------------------------------------------------------------------------------------
-    // private method
-    //-------------------------------------------------------------------------------------------
     private void setProperties() {
         paint = new Paint();
         paint.setAntiAlias(true);
@@ -211,7 +237,11 @@ public class DrawThread extends Thread {
     }
 
     private void createObstacles() {
-        obstacles = new ArrayList<RacingCar>();
+        if (obstacles == null) {
+            obstacles = new ArrayList<RacingCar>();
+        } else {
+            obstacles.clear();
+        }
         int carHeight = blockSize * 4 + RacingView.SPACING * 3;
         int startOffset = -carHeight;
         for (int i = 0; i < RacingView.MAX_OBSTACLE; i++) {
@@ -234,9 +264,10 @@ public class DrawThread extends Thread {
                 }
                 obstacle.draw(c);
 
+
                 if (state == PlayState.Playing) {
                     if (isCollision(obstacle)) {
-                        isCollision = true;
+                        state = PlayState.Collision;
                         if (handler != null) {
                             handler.sendEmptyMessage(MSG_COLLISION);
                         }
@@ -269,3 +300,4 @@ public class DrawThread extends Thread {
                 + (blockSize * 3 + RacingView.SPACING * 2) * r;
     }
 }
+
