@@ -6,12 +6,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
@@ -19,14 +21,14 @@ import com.google.android.gms.ads.AdView;
 public class MainActivity extends AppCompatActivity {
 
     private static final int MSG_FINISH_LEVEL = 10000;
-    private static final int DURATION_LEVEL = 15 * 1000;
+    private static final int DURATION_LEVEL = 10 * 1000;
     private static final int INIT_SPEED = 12;
-    private static final int SPEED_INTERVAL = 4;
+    private static final int SPEED_INTERVAL = 2;
     private static final int MAX_SPEED = 40;
 
     private AdView adBanner;
     private View contLabel;
-    private TextView tvLabelLevel;
+    private TextView tvNotify;
     private TextView tvScore, tvLevel, tvBest;
     private ImageView ivCenter;
     private RacingView racingView;
@@ -39,14 +41,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         adBanner = (AdView) findViewById(R.id.banner);
-        AdRequest adRequest = new AdRequest.Builder()
-                .addTestDevice("E22D097DA71BEAB0F0D3BBD3DD1A6700")
-                .addTestDevice("D3BD70725AB672E8AF899E55C5485CEE")
-                .build();
-        adBanner.loadAd(adRequest);
+        AdRequest.Builder builder = new AdRequest.Builder();
+        if (BuildConfig.DEBUG) {
+            builder.addTestDevice("E22D097DA71BEAB0F0D3BBD3DD1A6700");
+            builder.addTestDevice("D3BD70725AB672E8AF899E55C5485CEE");
+        }
+        adBanner.loadAd(builder.build());
 
-        contLabel = findViewById(R.id.contLabel);
-        tvLabelLevel = (TextView) findViewById(R.id.labelLevel);
+        contLabel = findViewById(R.id.contNotify);
+        tvNotify = (TextView) findViewById(R.id.notify);
 
         tvScore = (TextView) findViewById(R.id.score);
         tvLevel = (TextView) findViewById(R.id.level);
@@ -64,7 +67,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         racingView = (RacingView) findViewById(R.id.racingView);
-
         initialize();
     }
 
@@ -80,6 +82,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         if (adBanner != null) {
             adBanner.pause();
+        }
+        if (racingView != null && racingView.getPlayState() == RacingView.PlayState.Playing) {
+            pause();
         }
         super.onPause();
     }
@@ -138,13 +143,17 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case MSG_FINISH_LEVEL:
                     level++;
-                    racingView.setPlayState(RacingView.PlayState.LevelUp);
 
                     if (racingView.getSpeed() < MAX_SPEED) {
                         racingView.setSpeed(racingView.getSpeed() + SPEED_INTERVAL);
                     }
 
-                    prepare();
+                    tvLevel.setText(String.valueOf(level));
+                    racingHandler.sendEmptyMessageDelayed(MSG_FINISH_LEVEL, DURATION_LEVEL);
+
+                    Toast t = Toast.makeText(MainActivity.this, "LEVEL " + level, Toast.LENGTH_SHORT);
+                    t.setGravity(Gravity.CENTER, 0, 0);
+                    t.show();
                     break;
                 default:
                     break;
@@ -188,7 +197,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void prepare() {
         tvLevel.setText(String.valueOf(level));
-        tvLabelLevel.setText("LEVEL " + level);
+        tvNotify.setText("READY?");
         showLabelContainer();
 
         ivCenter.setBackgroundResource(R.drawable.ic_play);
@@ -204,10 +213,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Click on playing
         if (racingView.getPlayState() == RacingView.PlayState.Playing) {
-            ivCenter.setBackgroundResource(R.drawable.ic_play);
-            racingView.pause();
-            startLevelTime = System.currentTimeMillis() - startLevelTime;
-            racingHandler.removeMessages(MSG_FINISH_LEVEL);
+            pause();
         } else {
             ivCenter.setBackgroundResource(R.drawable.ic_pause);
 
@@ -229,13 +235,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void pause() {
+        ivCenter.setBackgroundResource(R.drawable.ic_play);
+        racingView.pause();
+        startLevelTime = System.currentTimeMillis() - startLevelTime;
+        racingHandler.removeMessages(MSG_FINISH_LEVEL);
+    }
+
     private void collision(boolean achieveBest) {
         racingHandler.removeMessages(MSG_FINISH_LEVEL);
 
         if (achieveBest) {
-            tvLabelLevel.setText("Congratulation!\nYou are the Best!");
+            tvNotify.setText("Congratulation!\nYou are the Best!");
         } else {
-            tvLabelLevel.setText("Try again!");
+            tvNotify.setText("Try again!");
         }
 
         contLabel.setVisibility(View.VISIBLE);

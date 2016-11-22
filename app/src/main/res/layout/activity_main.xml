@@ -115,23 +115,23 @@
             android:layout_margin="4dp" />
 
         <LinearLayout
-            android:id="@+id/contLabel"
+            android:id="@+id/contNotify"
             android:layout_width="match_parent"
             android:layout_height="100dp"
             android:layout_centerInParent="true"
             android:layout_marginLeft="60dp"
             android:layout_marginTop="60dp"
-            android:background="@color/brown900"
+            android:background="@drawable/rect_brown900"
             android:gravity="center"
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/labelLevel"
+                android:id="@+id/notify"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:textColor="@color/brown50"
-                android:textSize="36dp" />
+                android:textSize="24dp" />
         </LinearLayout>
     </RelativeLayout>
 
