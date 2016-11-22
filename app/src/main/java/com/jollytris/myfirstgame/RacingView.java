@@ -95,6 +95,7 @@ public class RacingView extends View {
         if (handler != null && state == PlayState.Playing) {
             handler.sendEmptyMessage(MSG_SCORE);
         }
+
         invalidate();
     }
 

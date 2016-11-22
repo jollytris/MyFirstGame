@@ -15,8 +15,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.InterstitialAd;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,6 +29,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int MAX_SPEED = 40;
 
     private AdView adBanner;
+    private InterstitialAd adInterstitial;
+
     private View contLabel;
     private TextView tvNotify;
     private TextView tvScore, tvLevel, tvBest;
@@ -34,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private RacingView racingView;
     private int score, level, bestScore;
     private long startLevelTime;
+    private int playCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +52,16 @@ public class MainActivity extends AppCompatActivity {
             builder.addTestDevice("D3BD70725AB672E8AF899E55C5485CEE");
         }
         adBanner.loadAd(builder.build());
+
+        adInterstitial = new InterstitialAd(this);
+        adInterstitial.setAdUnitId("ca-app-pub-8613452669109382/2469624951");
+        adInterstitial.setAdListener(new AdListener() {
+            @Override
+            public void onAdClosed() {
+                requestNewInterstitial();
+            }
+        });
+        requestNewInterstitial();
 
         contLabel = findViewById(R.id.contNotify);
         tvNotify = (TextView) findViewById(R.id.notify);
@@ -67,6 +82,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         racingView = (RacingView) findViewById(R.id.racingView);
+
+        playCount = 0;
         initialize();
     }
 
@@ -227,6 +244,15 @@ public class MainActivity extends AppCompatActivity {
                 racingHandler.sendEmptyMessageDelayed(MSG_FINISH_LEVEL, DURATION_LEVEL);
             } else {
                 // Click on stop
+                playCount++;
+                if (playCount > 5) {
+                    playCount = 0;
+                    if (adInterstitial != null && adInterstitial.isLoaded()) {
+                        adInterstitial.show();
+                        ivCenter.setBackgroundResource(R.drawable.ic_play);
+                        return;
+                    }
+                }
                 hideLabelContainer();
                 racingView.play(racingHandler);
                 racingHandler.sendEmptyMessageDelayed(MSG_FINISH_LEVEL, DURATION_LEVEL);
@@ -281,5 +307,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         contLabel.startAnimation(anim);
+    }
+
+    private void requestNewInterstitial() {
+        AdRequest.Builder builder = new AdRequest.Builder();
+        if (BuildConfig.DEBUG) {
+            builder.addTestDevice("E22D097DA71BEAB0F0D3BBD3DD1A6700");
+            builder.addTestDevice("D3BD70725AB672E8AF899E55C5485CEE");
+        }
+        adInterstitial.loadAd(builder.build());
     }
 }
