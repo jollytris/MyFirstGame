@@ -22,6 +22,9 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int MSG_FINISH_LEVEL = 10000;
     private static final int DURATION_LEVEL = 15 * 1000;
+    private static final int INIT_SPEED = 12;
+    private static final int SPEED_INTERVAL = 4;
+    private static final int MAX_SPEED = 40;
 
     private AdView adBanner;
     private View contLabel;
@@ -144,8 +147,8 @@ public class MainActivity extends AppCompatActivity {
                     level++;
                     racingView.pause();
 
-                    if (speed < 40) {
-                        speed += 4;
+                    if (speed < MAX_SPEED) {
+                        speed += SPEED_INTERVAL;
                         racingView.setSpeed(speed);
                     }
 
@@ -159,7 +162,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void initialize() {
         reset();
-
         prepare();
     }
 
@@ -183,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
         score = 0;
         level = 1;
         bestScore = loadBestScore();
-        speed = 12;
+        speed = INIT_SPEED;
         isCollision = false;
 
         tvScore.setText(String.valueOf(score));
@@ -194,8 +196,7 @@ public class MainActivity extends AppCompatActivity {
     private void prepare() {
         tvLevel.setText(String.valueOf(level));
         tvLabelLevel.setText("LEVEL " + level);
-        contLabel.setVisibility(View.VISIBLE);
-        contLabel.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left));
+        showLabelContainer();
 
         ivCenter.setBackgroundResource(R.drawable.ic_play);
     }
@@ -207,6 +208,7 @@ public class MainActivity extends AppCompatActivity {
             return ;
         }
 
+        // Click on playing
         if (racingView.getPlayState() == DrawThread.PlayState.Playing) {
             ivCenter.setBackgroundResource(R.drawable.ic_play);
             racingView.pause();
@@ -215,51 +217,21 @@ public class MainActivity extends AppCompatActivity {
         } else {
             ivCenter.setBackgroundResource(R.drawable.ic_pause);
 
+            // Click on pause
             if (racingView.getPlayState() == DrawThread.PlayState.Pause) {
                 racingView.resume();
+
+                // Click on pause by level up
                 if (contLabel.getVisibility() == View.VISIBLE) {
-                    Animation anim = AnimationUtils.loadAnimation(this, android.R.anim.slide_out_right);
-                    anim.setAnimationListener(new Animation.AnimationListener() {
-                        @Override
-                        public void onAnimationStart(Animation animation) {
-
-                        }
-
-                        @Override
-                        public void onAnimationEnd(Animation animation) {
-                            contLabel.setVisibility(View.GONE);
-                        }
-
-                        @Override
-                        public void onAnimationRepeat(Animation animation) {
-
-                        }
-                    });
-                    contLabel.startAnimation(anim);
+                    hideLabelContainer();
                     racingHandler.sendEmptyMessageDelayed(MSG_FINISH_LEVEL, DURATION_LEVEL);
                 } else {
+                    // Click on pause by button
                     racingHandler.sendEmptyMessageDelayed(MSG_FINISH_LEVEL, DURATION_LEVEL - startLevelTime);
                 }
             } else {
-                Animation anim = AnimationUtils.loadAnimation(this, android.R.anim.slide_out_right);
-                anim.setAnimationListener(new Animation.AnimationListener() {
-                    @Override
-                    public void onAnimationStart(Animation animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animation animation) {
-                        contLabel.setVisibility(View.GONE);
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animation animation) {
-
-                    }
-                });
-                contLabel.startAnimation(anim);
-
+                // Click on stop
+                hideLabelContainer();
                 racingView.play(racingHandler, speed);
                 racingHandler.sendEmptyMessageDelayed(MSG_FINISH_LEVEL, DURATION_LEVEL);
             }
@@ -281,5 +253,31 @@ public class MainActivity extends AppCompatActivity {
         contLabel.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left));
 
         ivCenter.setBackgroundResource(R.drawable.ic_retry);
+    }
+
+    private void showLabelContainer() {
+        contLabel.setVisibility(View.VISIBLE);
+        contLabel.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left));
+    }
+
+    private void hideLabelContainer() {
+        Animation anim = AnimationUtils.loadAnimation(this, android.R.anim.slide_out_right);
+        anim.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                contLabel.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        contLabel.startAnimation(anim);
     }
 }
