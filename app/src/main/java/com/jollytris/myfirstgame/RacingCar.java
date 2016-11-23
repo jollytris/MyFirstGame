@@ -19,6 +19,7 @@ public class RacingCar {
     private Paint paint = null;
     private Rect boundary = null;
     private RectF rectF;
+    private boolean isLast;
 
     public RacingCar(int blockSize) {
         this(blockSize, 0, 0, COLOR_ME);
@@ -37,6 +38,15 @@ public class RacingCar {
 
         boundary = new Rect();
         rectF = new RectF();
+        isLast = false;
+    }
+
+    public boolean isLast() {
+        return isLast;
+    }
+
+    public void setLast(boolean last) {
+        isLast = last;
     }
 
     public void setPosition(int x) {

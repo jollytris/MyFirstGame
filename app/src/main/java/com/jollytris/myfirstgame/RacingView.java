@@ -22,13 +22,13 @@ public class RacingView extends View {
     // fields
     //---------------------------------------------------------------------------------------------
     public static final int SPACING = 2;
-    public static final int VERTICAL_COUNT = 20;
-    public static final int HORIZONTAL_COUNT = 10;
     public static final int MAX_COL_COUNT = 2;
-    public static final int MAX_OBSTACLE = 10;
+    public static final int VERTICAL_COUNT = 20;
+    public static final int HORIZONTAL_COUNT = MAX_COL_COUNT * 3 + 2 + 2;
 
     public static final int MSG_SCORE = 1000;
     public static final int MSG_COLLISION = 2000;
+    public static final int MSG_COMPLETE = 3000;
 
     public enum PlayState {
         Ready, Playing, Pause, LevelUp, Collision
@@ -245,7 +245,7 @@ public class RacingView extends View {
         }
         int carHeight = blockSize * 4 + RacingView.SPACING * 3;
         int startOffset = -carHeight;
-        for (int i = 0; i < RacingView.MAX_OBSTACLE; i++) {
+        for (int i = 0; i < speed * 3; i++) {
             RacingCar obstacle = new RacingCar(
                     blockSize,
                     getLeftPositionX(random.nextInt(RacingView.MAX_COL_COUNT)), startOffset,
@@ -253,10 +253,12 @@ public class RacingView extends View {
             obstacles.add(obstacle);
             startOffset = startOffset - ((carHeight + RacingView.SPACING) * 2);
         }
+        obstacles.get(obstacles.size()-1).setLast(true);
     }
 
     private void drawObastacles(Canvas c) {
         if (obstacles != null) {
+            boolean isComplete = false;
             int size = obstacles.size();
             for (int i = 0; i < size; i++) {
                 RacingCar obstacle = obstacles.get(i);
@@ -274,16 +276,20 @@ public class RacingView extends View {
                         }
                     }
 
-                    passingCheck(obstacle);
+                    if (obstacle.y >= viewHeight + (obstacle.height * 2) && obstacle.isLast()) {
+                        isComplete = true;
+                    }
                 }
             }
-        }
-    }
 
-    private void passingCheck(RacingCar obstacle) {
-        if (obstacle.y >= viewHeight + (obstacle.height * 2)) {
-            obstacle.x = getLeftPositionX(random.nextInt(RacingView.MAX_COL_COUNT));
-            obstacle.y = obstacle.y - ((obstacle.height * 2) * RacingView.MAX_OBSTACLE);
+            if (isComplete) {
+                state = PlayState.LevelUp;
+                createObstacles();
+
+                if (handler != null) {
+                    handler.sendEmptyMessage(MSG_COMPLETE);
+                }
+            }
         }
     }
 

@@ -6,14 +6,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
-import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
@@ -22,8 +20,6 @@ import com.google.android.gms.ads.InterstitialAd;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int MSG_FINISH_LEVEL = 10000;
-    private static final int DURATION_LEVEL = 10 * 1000;
     private static final int INIT_SPEED = 12;
     private static final int SPEED_INTERVAL = 2;
     private static final int MAX_SPEED = 40;
@@ -37,7 +33,6 @@ public class MainActivity extends AppCompatActivity {
     private ImageView ivCenter;
     private RacingView racingView;
     private int score, level, bestScore;
-    private long startLevelTime;
     private int playCount;
 
     @Override
@@ -113,7 +108,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         racingView.reset();
-        racingHandler.removeMessages(MSG_FINISH_LEVEL);
         super.onDestroy();
     }
 
@@ -158,7 +152,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     collision(achieveBest);
                     break;
-                case MSG_FINISH_LEVEL:
+                case RacingView.MSG_COMPLETE:
                     level++;
 
                     if (racingView.getSpeed() < MAX_SPEED) {
@@ -166,11 +160,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     tvLevel.setText(String.valueOf(level));
-                    racingHandler.sendEmptyMessageDelayed(MSG_FINISH_LEVEL, DURATION_LEVEL);
-
-                    Toast t = Toast.makeText(MainActivity.this, "LEVEL " + level, Toast.LENGTH_SHORT);
-                    t.setGravity(Gravity.CENTER, 0, 0);
-                    t.show();
+                    prepare();
                     break;
                 default:
                     break;
@@ -214,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void prepare() {
         tvLevel.setText(String.valueOf(level));
-        tvNotify.setText("READY?");
+        tvNotify.setText("LEVEL " + level);
         showLabelContainer();
 
         ivCenter.setBackgroundResource(R.drawable.ic_play);
@@ -237,11 +227,9 @@ public class MainActivity extends AppCompatActivity {
             // Click on pause
             if (racingView.getPlayState() == RacingView.PlayState.Pause) {
                 racingView.resume();
-                racingHandler.sendEmptyMessageDelayed(MSG_FINISH_LEVEL, DURATION_LEVEL - startLevelTime);
             } else if (racingView.getPlayState() == RacingView.PlayState.LevelUp) {
                 racingView.resume();
                 hideLabelContainer();
-                racingHandler.sendEmptyMessageDelayed(MSG_FINISH_LEVEL, DURATION_LEVEL);
             } else {
                 // Click on stop
                 playCount++;
@@ -255,22 +243,16 @@ public class MainActivity extends AppCompatActivity {
                 }
                 hideLabelContainer();
                 racingView.play(racingHandler);
-                racingHandler.sendEmptyMessageDelayed(MSG_FINISH_LEVEL, DURATION_LEVEL);
             }
-            startLevelTime = System.currentTimeMillis();
         }
     }
 
     private void pause() {
         ivCenter.setBackgroundResource(R.drawable.ic_play);
         racingView.pause();
-        startLevelTime = System.currentTimeMillis() - startLevelTime;
-        racingHandler.removeMessages(MSG_FINISH_LEVEL);
     }
 
     private void collision(boolean achieveBest) {
-        racingHandler.removeMessages(MSG_FINISH_LEVEL);
-
         if (achieveBest) {
             tvNotify.setText("Congratulation!\nYou are the Best!");
         } else {
