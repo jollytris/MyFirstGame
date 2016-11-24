@@ -6,12 +6,13 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
-import android.view.MotionEvent;
+import android.view.Gravity;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
@@ -66,10 +67,7 @@ public class MainActivity extends AppCompatActivity {
         tvBest = (TextView) findViewById(R.id.best);
 
         ivCenter = (ImageView) findViewById(R.id.imgCenter);
-
-        findViewById(R.id.contLeft).setOnTouchListener(directionTouchListener);
-        findViewById(R.id.contRight).setOnTouchListener(directionTouchListener);
-        findViewById(R.id.contCenter).setOnClickListener(new View.OnClickListener() {
+        ivCenter.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 play();
@@ -87,6 +85,9 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         if (adBanner != null) {
             adBanner.resume();
+        }
+        if (racingView != null && racingView.getPlayState() == RacingView.PlayState.Pause) {
+            racingView.resume();
         }
     }
 
@@ -110,29 +111,6 @@ public class MainActivity extends AppCompatActivity {
         racingView.reset();
         super.onDestroy();
     }
-
-    private View.OnTouchListener directionTouchListener = new View.OnTouchListener() {
-        @Override
-        public boolean onTouch(View view, MotionEvent motionEvent) {
-            int action = motionEvent.getAction();
-            if (action == MotionEvent.ACTION_DOWN
-                    || action == MotionEvent.ACTION_MOVE) {
-                view.setBackgroundResource(R.drawable.rect_brown100);
-            } else {
-                view.setBackgroundResource(R.drawable.rect_brown200);
-            }
-
-            int vId = view.getId();
-            if (action == MotionEvent.ACTION_DOWN) {
-                if (vId == R.id.contLeft) {
-                    racingView.moveLeft();
-                } else if (vId == R.id.contRight) {
-                    racingView.moveRight();
-                }
-            }
-            return true;
-        }
-    };
 
     private Handler racingHandler = new Handler() {
         @Override
@@ -207,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
         tvNotify.setText("LEVEL " + level);
         showLabelContainer();
 
-        ivCenter.setBackgroundResource(R.drawable.ic_play);
+        ivCenter.setImageResource(R.drawable.ic_play);
     }
 
     private void play() {
@@ -222,7 +200,9 @@ public class MainActivity extends AppCompatActivity {
         if (racingView.getPlayState() == RacingView.PlayState.Playing) {
             pause();
         } else {
-            ivCenter.setBackgroundResource(R.drawable.ic_pause);
+            ivCenter.setImageResource(R.drawable.ic_pause);
+
+            showArrowToast();
 
             // Click on pause
             if (racingView.getPlayState() == RacingView.PlayState.Pause) {
@@ -237,7 +217,7 @@ public class MainActivity extends AppCompatActivity {
                     playCount = 0;
                     if (adInterstitial != null && adInterstitial.isLoaded()) {
                         adInterstitial.show();
-                        ivCenter.setBackgroundResource(R.drawable.ic_play);
+                        ivCenter.setImageResource(R.drawable.ic_play);
                         return;
                     }
                 }
@@ -248,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void pause() {
-        ivCenter.setBackgroundResource(R.drawable.ic_play);
+        ivCenter.setImageResource(R.drawable.ic_play);
         racingView.pause();
     }
 
@@ -262,7 +242,7 @@ public class MainActivity extends AppCompatActivity {
         contLabel.setVisibility(View.VISIBLE);
         contLabel.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left));
 
-        ivCenter.setBackgroundResource(R.drawable.ic_retry);
+        ivCenter.setImageResource(R.drawable.ic_retry);
     }
 
     private void showLabelContainer() {
@@ -289,6 +269,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         contLabel.startAnimation(anim);
+    }
+
+    private void showArrowToast() {
+        Toast t = new Toast(this);
+        t.setView(View.inflate(this, R.layout.view_arrow_toast, null));
+        t.setGravity(Gravity.CENTER, 0, 0);
+        t.setDuration(Toast.LENGTH_SHORT);
+        t.show();
     }
 
     private void requestNewInterstitial() {

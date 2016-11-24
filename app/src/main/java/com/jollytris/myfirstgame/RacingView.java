@@ -6,8 +6,8 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.os.Handler;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -36,7 +36,8 @@ public class RacingView extends View {
 
     private Handler handler = null;
     private PlayState state;
-    private int viewWidth, viewHeight, blockSize;
+    private int boardWidth, viewHeight, blockSize;
+    private int boardLeft, boardRight;
     private int speed;
 
     private Paint paint;
@@ -70,8 +71,12 @@ public class RacingView extends View {
         int height = bottom - top;
         if (bottom - top > 0) {
             int blockSize = (height - (SPACING * (VERTICAL_COUNT + 1))) / VERTICAL_COUNT;
-            int w = blockSize * HORIZONTAL_COUNT + SPACING * (HORIZONTAL_COUNT + 1);
+            int w = blockSize * HORIZONTAL_COUNT + SPACING * (HORIZONTAL_COUNT - 1);
             int h = blockSize * VERTICAL_COUNT + SPACING * (VERTICAL_COUNT + 1);
+
+            int viewWidth = right - left;
+            boardLeft = (viewWidth - w) / 2;
+            boardRight = viewWidth - (viewWidth - w) / 2;
             initialize(w, h, blockSize);
         }
     }
@@ -97,6 +102,18 @@ public class RacingView extends View {
         }
 
         invalidate();
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            if (event.getX() > boardWidth / 2) {
+                moveRight();
+            } else {
+                moveLeft();
+            }
+        }
+        return super.onTouchEvent(event);
     }
 
     //---------------------------------------------------------------------------------------------
@@ -137,38 +154,6 @@ public class RacingView extends View {
         createObstacles();
     }
 
-    public void moveLeft() {
-        if (state != PlayState.Playing) {
-            return;
-        }
-
-        if (myself != null) {
-            if (myself.x > blockSize + RacingView.SPACING * 2) {
-                myself.moveLeft();
-            }
-            if (myself.x <= blockSize + RacingView.SPACING * 2) {
-                myself.setPosition(blockSize + RacingView.SPACING * 2 + (RacingView.SPACING + blockSize));
-            }
-        }
-    }
-
-    public void moveRight() {
-        if (state != PlayState.Playing) {
-            return;
-        }
-
-        if (myself != null) {
-            if (myself.x + myself.width < viewWidth - RacingView.SPACING * 2 - blockSize) {
-                myself.moveRight();
-            }
-
-            if (myself.x + myself.width >= viewWidth - RacingView.SPACING * 2 - blockSize) {
-                myself.setPosition(viewWidth - RacingView.SPACING * 2 - blockSize - myself.width
-                        - (RacingView.SPACING + blockSize));
-            }
-        }
-    }
-
     //---------------------------------------------------------------------------------------------
     // private
     //---------------------------------------------------------------------------------------------
@@ -178,14 +163,9 @@ public class RacingView extends View {
         }
         state = PlayState.Ready;
 
-        this.viewWidth = width;
+        this.boardWidth = width;
         this.viewHeight = height;
         this.blockSize = blockSize;
-
-        ViewGroup.LayoutParams params = getLayoutParams();
-        params.width = width;
-        params.height = height;
-        setLayoutParams(params);
 
         setProperties();
 
@@ -215,15 +195,15 @@ public class RacingView extends View {
             RectF left = new RectF(0, 0, 0, 0);
             left.top = i * blockSize + RacingView.SPACING * (i + 1);
             left.bottom = left.top + blockSize;
-            left.left = 0;
-            left.right = blockSize;
+            left.left = boardLeft;
+            left.right = left.left + blockSize;
             walls.add(left);
 
             RectF right = new RectF(0, 0, 0, 0);
             right.top = i * blockSize + RacingView.SPACING * (i + 1);
             right.bottom = left.top + blockSize;
-            right.left = viewWidth - blockSize - RacingView.SPACING;
-            right.right = right.left + blockSize;
+            right.left = boardRight - blockSize;
+            right.right = boardRight;
             walls.add(right);
         }
     }
@@ -322,10 +302,45 @@ public class RacingView extends View {
     }
 
     private int getLeftPositionX(int r) {
-        return (RacingView.SPACING + blockSize)
-                + (RacingView.SPACING + blockSize)
+        return boardLeft
+                + blockSize
+                + RacingView.SPACING
+                + blockSize
                 + RacingView.SPACING * (r + 1)
                 + (blockSize * 3 + RacingView.SPACING * 2) * r;
+    }
+
+    private void moveLeft() {
+        if (state != PlayState.Playing) {
+            return;
+        }
+
+        if (myself != null) {
+            int left = boardLeft + blockSize * 2 + RacingView.SPACING * 2;
+            if (myself.x > left) {
+                myself.moveLeft();
+            }
+            if (myself.x <= left) {
+                myself.setPosition(left);
+            }
+        }
+    }
+
+    private void moveRight() {
+        if (state != PlayState.Playing) {
+            return;
+        }
+
+        if (myself != null) {
+            int right = boardRight - blockSize * 2 - RacingView.SPACING * 2;
+            if (myself.x + myself.width < right) {
+                myself.moveRight();
+            }
+
+            if (myself.x + myself.width >= right) {
+                myself.setPosition(right- myself.width);
+            }
+        }
     }
 }
 
