@@ -22,7 +22,7 @@ public class RacingView extends View {
     // fields
     //---------------------------------------------------------------------------------------------
     public static final int SPACING = 2;
-    public static final int MAX_COL_COUNT = 2;
+    public static final int MAX_COL_COUNT = 3;
     public static final int VERTICAL_COUNT = 20;
     public static final int HORIZONTAL_COUNT = MAX_COL_COUNT * 3 + 2 + 2;
 
@@ -245,15 +245,36 @@ public class RacingView extends View {
         }
         int carHeight = blockSize * 4 + RacingView.SPACING * 3;
         int startOffset = -carHeight;
-        for (int i = 0; i < speed * 3; i++) {
+        int count = speed * (MAX_COL_COUNT);
+
+        if (speed >= 20) {
+            count = count * 2;
+        } else if (speed >= 30) {
+            count = count * 3;
+        } else if (speed >= 40) {
+            count = count * 4;
+        }
+        for (int i = 0; i < count; i++) {
+            int r = random.nextInt(RacingView.MAX_COL_COUNT);
             RacingCar obstacle = new RacingCar(
                     blockSize,
-                    getLeftPositionX(random.nextInt(RacingView.MAX_COL_COUNT)), startOffset,
+                    getLeftPositionX(r), startOffset,
                     RacingCar.COLOR_OBSTACLE);
             obstacles.add(obstacle);
+
+            if (i % 4 == 0) {
+                int r1 = random.nextInt(RacingView.MAX_COL_COUNT);
+                if (r != r1) {
+                    RacingCar obstacle1 = new RacingCar(
+                            blockSize,
+                            getLeftPositionX(r1), startOffset,
+                            RacingCar.COLOR_OBSTACLE);
+                    obstacles.add(obstacle1);
+                }
+            }
             startOffset = startOffset - ((carHeight + RacingView.SPACING) * 2);
         }
-        obstacles.get(obstacles.size()-1).setLast(true);
+        obstacles.get(obstacles.size() - 1).setLast(true);
     }
 
     private void drawObastacles(Canvas c) {
@@ -276,7 +297,7 @@ public class RacingView extends View {
                         }
                     }
 
-                    if (obstacle.y >= viewHeight + (obstacle.height * 2) && obstacle.isLast()) {
+                    if (obstacle.isLast() && obstacle.y >= viewHeight + obstacle.height + blockSize) {
                         isComplete = true;
                     }
                 }

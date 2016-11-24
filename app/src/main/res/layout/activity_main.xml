@@ -95,16 +95,16 @@
         <ImageView
             android:layout_width="match_parent"
             android:layout_height="2dp"
-            android:layout_marginLeft="60dp"
-            android:layout_marginRight="60dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
             android:background="@color/brown900" />
 
         <ImageView
             android:layout_width="match_parent"
             android:layout_height="2dp"
             android:layout_alignParentBottom="true"
-            android:layout_marginLeft="60dp"
-            android:layout_marginRight="60dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
             android:background="@color/brown900" />
 
         <com.jollytris.myfirstgame.RacingView
