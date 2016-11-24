@@ -262,7 +262,7 @@ public class RacingView extends View {
                     RacingCar.COLOR_OBSTACLE);
             obstacles.add(obstacle);
 
-            if (i % 4 == 0) {
+            if (i % 4 == 0 && RacingView.MAX_COL_COUNT > 2) {
                 int r1 = random.nextInt(RacingView.MAX_COL_COUNT);
                 if (r != r1) {
                     RacingCar obstacle1 = new RacingCar(
