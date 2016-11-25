@@ -136,6 +136,11 @@
                 android:scaleType="fitXY"
                 android:src="@drawable/ic_play" />
         </LinearLayout>
+
+        <include
+            android:id="@+id/toast"
+            android:visibility="gone"
+            layout="@layout/view_arrow_cont"/>
     </RelativeLayout>
 
     <com.google.android.gms.ads.AdView

@@ -6,13 +6,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
-import android.view.Gravity;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
@@ -272,11 +270,52 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showArrowToast() {
-        Toast t = new Toast(this);
-        t.setView(View.inflate(this, R.layout.view_arrow_toast, null));
-        t.setGravity(Gravity.CENTER, 0, 0);
-        t.setDuration(Toast.LENGTH_SHORT);
-        t.show();
+        final View v = findViewById(R.id.toast);
+        Animation anim = AnimationUtils.loadAnimation(this, android.R.anim.fade_in);
+        anim.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+                v.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                v.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        hideArrowToast();
+                    }
+                }, 1000);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        v.startAnimation(anim);
+    }
+
+    private void hideArrowToast() {
+        final View v = findViewById(R.id.toast);
+        Animation anim = AnimationUtils.loadAnimation(this, android.R.anim.fade_out);
+        anim.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                v.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        v.startAnimation(anim);
     }
 
     private void requestNewInterstitial() {
